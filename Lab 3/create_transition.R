@@ -12,7 +12,6 @@ construct <- function(df, years) {
   transition <- matrix(0, nrow = N, ncol = N, dimnames = list(teams, teams))
   
   for (i in 1:nrow(games)) {
-    # get team 1 and team 2
     visiting_team <- games$Visiting_Team[i]
     home_team <- games$Home_Team[i]
     visiting_score <- games$Visiting_Score[i]
