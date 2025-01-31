@@ -1,15 +1,13 @@
-score_drive <- function(yardage) {
+drive_result <- function(yardage) {
+  result <-NA
+  
   if (yardage <= 100) {
-    print("No score")
-    return(0)
+    result <-"No score"
   } else if (yardage > 100 && yardage <= 110) {
-    print("Touchdown")
-    return(1)
+    result <-"Touchdown"
   } else if (yardage > 110 && yardage <= 120) {
-    print("Field goal")
-    return(2)
+    result <-"Field goal"
   } else {
-    print("Error")
-    return(NA)
+    result <-"Error"
   }
 }
