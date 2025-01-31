@@ -1,26 +1,27 @@
 source("run_drive.R")
 
-simulate_epoch <- function(down, ytg, fp, n) {
+simulate_epoch <- function(down, ytg, fp, max_drives) {
   points <- 0
   team <- 1
   drives <- 0
   
-  while (drives < n) {
-    drive_result <- run_drive(fp)
+  while (drives < max_drives) {
+    drive <- run_drive(fp, down, ytg)
+    fp <- drive$new_yd_line
+    down <- drive$down
+    ytg <- drive$ytg
     
-    if (drive_result$result == "Touchdown") {
+    if (drive$result == "Touchdown") {
       return(7 * team) # this didn't seem to work without keyword return (*ask*)
-    } 
-    else if (drive_result$result == "Field goal") {
+    } else if (drive$result == "Field goal") {
       return(3 * team)
     }
     
     team <- team * -1
-    fp <- sample(0:50, size = 1)
     drives <- drives + 1
   }
   
-  0
+  return(0)
 }
 
 # testing

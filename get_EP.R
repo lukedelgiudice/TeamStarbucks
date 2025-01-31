@@ -1,6 +1,6 @@
 source("run_epoch.R")
 
-get_EP <- function(down, ytg, fp, max_drives = 1000, n) {
+get_EP <- function(down, ytg, fp, max_drives, n) {
   
   total_points <- 0
   
@@ -12,4 +12,4 @@ get_EP <- function(down, ytg, fp, max_drives = 1000, n) {
 }
 
 # testing
-# get_EP(1, 10, 63, 1000, 20)
+get_EP(1, 10, 63, 15, 1000)
