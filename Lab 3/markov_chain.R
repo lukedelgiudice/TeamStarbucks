@@ -147,3 +147,4 @@ mean(team_summary$avg_change)
 # Based on this new summary, it's clear that MLB teams fluctuate greatly from year to year,
 # with as large as 10.6 ranks changed on average between seasons, and the mean average
 # fluctuation being roughly 7 ranks changed between seasons across every team.
+
