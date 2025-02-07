@@ -1,3 +1,5 @@
+# NOT FINAL FUNCTION -- KEPT FOR PROOF OF CONTRIBUTION
+
 transition_matrix <- function(game_data) {
   teams <- unique(c(game_data$Visiting_Team, game_data$Home_Team))
   n <- length(teams)
