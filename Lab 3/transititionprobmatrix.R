@@ -7,7 +7,8 @@ transition_matrix <- function(game_data) {
     if (gamedata$Visiting_Score >= game_data$Home_Score) {
       loss_matrix[game_data$Home_Team[i], game_data$Visiting_Team[i]] <- 
         loss_matrix[game_data$Home_Team[i], game_data$Visiting_Team[i]] + 1
-    } else {
+    } 
+    else {
       loss_matrix[game_data$Visiting_Team[i], game_data$Home_Team[i]] <- 
         loss_matrix[game_data$Visiting_Team[i], game_data$Home_Team[i]] + 1
     }
