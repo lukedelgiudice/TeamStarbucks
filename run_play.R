@@ -1,87 +1,170 @@
 
+# FINAL TOUCHES: NEED TO REFERENCE DATA FOR ALL PROBABILTIES
+
+
+early_downs <- function(down, ytg, fp) {
+  # Turnover (B)
+  turnover_prob <- 0.05  # UPDATE PROB
+  if(runif(1) < turnover_prob) {
+    return(list(down = NA, ytg = NA, fp = fp, exit_drive = 1, event = "TO"))
+  }
+  
+  # Simulate the play
+  yg <- sample(0:15, 1, prob = rep(1/16, 16))
+  new_fp <- fp + yg
+  
+  # Check if touchdown occurred (C)
+  if(new_fp >= 100) {
+    return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "TD"))
+  }
+  
+  # Update ytd & d (D)
+  new_ytg <- max(0, ytg - yg)
+  new_down <- ifelse(new_ytg == 0, 1, down + 1)
+  new_ytg <- ifelse(new_ytg == 0, 10, new_ytg)
+  
+  return(list(down = new_down, ytg = new_ytg, fp = new_fp, exit_drive = 0, event = "none"))
+}
+
+down_four <- function(down, ytg, fp) {
+  
+  # Choose play type probs ** UPDATE TO MATCH DATA **
+  if (ytg < 2 && fp >= 70 && fp <= 95) {
+    p_fg   <- 0.4
+    p_gfi  <- 0.4
+    p_punt <- 0.2
+  } 
+  else if (fp < 70) {
+    p_fg   <- 0.0
+    p_gfi  <- 0.8
+    p_punt <- 0.2
+  } 
+  else if (fp > 95) {
+    p_fg   <- 0.0
+    p_gfi  <- 0.3
+    p_punt <- 0.7
+  } 
+  else {
+    p_fg   <- 0.3
+    p_gfi  <- 0.5
+    p_punt <- 0.2
+  }
+  
+  play_types <- c("GFI", "PUNT", "FG")
+  play_choice <- sample(play_types, size = 1, prob = c(p_gfi, p_punt, p_fg))
+  
+  # Field goal
+  if (play_choice == "FG") {
+    # Kick distance
+    kick_distance <- (100 - fp) + 10 # Add 10 for hold distance
+    
+    # Adjust success prob based on range
+    if (kick_distance < 40) {
+      fg_prob <- 0.8
+    } 
+    else if (kick_distance < 65) {
+      fg_prob <- 0.2
+    } 
+    else {
+      fg_prob <- max(0.2 - (kick_distance) / 750, 0)
+    }
+    
+    success <- runif(1) < fg_prob
+    
+    if (success) {
+      # Made field goal
+      return(list(down = NA, ytg = NA, fp = 115, exit_drive = 1, event = "FG_made"))
+    } 
+    else {
+      # Missed field goal
+      return(list(down = NA, ytg = NA, fp = fp, exit_drive = 1, event = "FG_missed"))
+    }
+  }
+  
+  # Punt
+  else if (play_choice == "PUNT") {
+    # Turnover on downs
+    if (runif(1) < 0.9) {
+      return(list(down = NA, ytg = NA, fp = fp, exit_drive = 1, event = "PUNT"))
+    } 
+    
+    # Abnormal punt
+    else {
+      new_fp <- fp + 5
+      
+      # Touchdown punt return
+      if(new_fp >= 100) {
+        return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "TD"))
+      }
+      
+      # Mishandled punt
+      return(list(down = 1, ytg = 10, fp = new_fp, exit_drive = 0, event = "PUNT_mishandled"))
+    }
+  } 
+  
+  # Go for it
+  else if (play_choice == "GFI") {
+    # Conversion prob depends on ytg
+    conversion_prob <- ifelse(ytg <= 2, 0.7, 0.3)
+    
+    success <- runif(1) < conversion_prob
+    
+    if (success) {
+      # Successful conversion (simulate yards gained beyond required distance)
+      yg <- sample(ytg:15, 1)
+      new_fp <- fp + yg
+      if (new_fp >= 100) {
+        return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "TD"))
+      } 
+      else {
+        return(list(down = 1, ytg = 10, fp = new_fp, exit_drive = 0, event = "GFI_success"))
+      }
+    }
+    
+    # Unsuccessful conversion (turnover)
+    else {
+      return(list(down = NA, ytg = NA, fp = fp, exit_drive = 1, event = "GFI_failure"))
+    }
+  }
+}
+
+# Helper functions for each down (eventually adding play selection nuance)
+
+down_one <- function(ytg, fp) {
+  early_downs(1, ytg, fp)
+}
+
+down_two <- function(ytg, fp) {
+  early_downs(2, ytg, fp)
+}
+
+down_three <- function(ytg, fp) {
+  early_downs(3, ytg, fp)
+}
+
+down_four <- function(ytg, fp) {
+  down_fourth(4, ytg, fp)
+}
 
 run_play <- function(down, ytg, fp) {
-  exit_drive = 0
   
-  if (down < 4) {
-    outcome = early_downs(down, ytg, fp)
-    
-    # touchdown
-    if (outcome$fp == 105) {
-      exit_drive = 1
-    }
-    
-    # turnover -- return this in outcome (bool)
-    else if (outcome$turnover) {
-      exit_drive = 1
-    }
-    
-    # no turnover / touchdown
-    else {
-      # do nothing?
-    }
-    
+  # First down
+  if (down == 1) {
+    return(down_one(ytg, fp))
+  } 
+  
+  # Second down
+  else if (down == 2) {
+    return(down_two(ytg, fp))
+  } 
+  
+  # Third down
+  else if (down == 3) {
+    return(down_three(ytg, fp))
+  } 
+  
+  # Fourth down
+  else if (down == 4) {
+    return(down_four(ytg, fp))
   }
-  else if (down >= 4) {
-    outcome = fourth_down(down, ytg, fp)
-    
-    # Made field goal
-    if (outcome$fp == 115) {
-      exit_drive = 1
-    }
-    
-    # missed field goal / didn't successfully convert 4th down conversion attempt
-    else if (outcome$fp < fp + ytg) {
-      exit_drive = 1
-    }
-    
-    # DO THIS INSTEAD #
-    
-    if (outcome$FIELDGOAL) {
-      if (outcome$fp == 115) {
-        # made field goal
-      }
-      else {
-        # missed field goal
-      }
-    }
-    
-    # make bool flags that can be used for handling switches
-    else if (outcome$PUNT) {
-      if (outcome$SWITCH) {
-        # downs switched
-      }
-      else {
-        # team mishandled punt
-      }
-    }
-    
-    else if (outcome$GOFORIT) {
-      if (outcome$fp < fp + ytg) {
-        # unsuccessful (return state to epoch function to switch possession and proceed)
-      }
-      else {
-        # successful, stay in the drive function and proceed from  (1, 10, FP)
-      }
-    }
-    
-  }
-  
-  # sample in 4th down function whether not to go for field goal
-  # 2 or less go for it
-  # for punts, divide field into chunks and then get samples within each (filter to those regions)
-  
-  # initialize team status to -1.  Why not 1, since the "original offense" runs
-  # the first drive?  The while loop will always have to toggle the team in 
-  # possession, regardless of if there was a score or not (I suppose it doesn't
-  # _have_ to, but that is overly complicated).  So we will set it to -1 and 
-  # then immediately switch it when we enter the while loop.
-  
-  # team_status <- -1 -- epoch handles team switching!
-  
-  
-  
-  outcome
-  
-  list(down=1, ytg=10, fp=new_fp, exit_drive) 
 }
