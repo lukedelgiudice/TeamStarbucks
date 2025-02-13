@@ -1,0 +1,165 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-02-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+readRDS("C:/Users/charles.muth/Desktop/Homework/pbp2014-2024.rds")
+
+football_data <- `pbp2014-2024`
+  
+```
+
+```{r}
+fourth_down <- football_data %>%
+  filter(down == 4)
+
+```
+
+
+
+## 70 to 95 yards to go
+
+```{r}
+play_type_counts_70to95 <- football_data %>%
+  # Remove NAs
+  filter(!is.na(play_type)) %>%
+  filter(yardline_100 >= 70 & yardline_100 <= 95) %>%
+  # Count occurrences of each play_type
+  count(play_type)
+
+# Print the result
+print(play_type_counts_70to95)
+
+```
+
+```{r}
+# Create a new column to categorize the play types
+play_data_categorized <- play_type_counts_70to95 %>%
+  mutate(category = case_when(
+    play_type == "field_goal" ~ "field_goal",
+    play_type == "punt" ~ "punt",
+    play_type %in% c("pass", "run") ~ "go for it",
+    TRUE ~ "other"  # For all other play types
+  ))
+
+# Sum the 'n' values for each category and exclude the "other" category
+category_sums <- play_data_categorized %>%
+  filter(category != "other") %>%
+  group_by(category) %>%
+  summarise(total = sum(n))
+
+# Calculate the total number of plays in the relevant categories (field_goal, go for it, punt)
+total_relevant_plays <- sum(category_sums$total)
+
+# Calculate probabilities for each category
+category_probabilities <- category_sums %>%
+  mutate(probability = total / total_relevant_plays)
+
+# Print the result
+print(category_probabilities)
+
+```
+
+## yardline_100 less than 70
+
+```{r}
+play_type_counts_lessthan70 <- football_data %>%
+  # Remove NAs
+  filter(!is.na(play_type)) %>%
+  filter(yardline_100 < 70) %>%
+  # Count occurrences of each play_type
+  count(play_type)
+
+# Print the result
+print(play_type_counts_lessthan70)
+
+```
+
+```{r}
+# Create a new column to categorize the play types
+play_data_categorized <- play_type_counts_lessthan70 %>%
+  mutate(category = case_when(
+    play_type == "field_goal" ~ "field_goal",
+    play_type == "punt" ~ "punt",
+    play_type %in% c("pass", "run") ~ "go for it",
+    TRUE ~ "other"  # For all other play types
+  ))
+
+# Sum the 'n' values for each category and exclude the "other" category
+category_sums <- play_data_categorized %>%
+  filter(category != "other") %>%
+  group_by(category) %>%
+  summarise(total = sum(n))
+
+# Calculate the total number of plays in the relevant categories (field_goal, go for it, punt)
+total_relevant_plays <- sum(category_sums$total)
+
+# Calculate probabilities for each category
+category_probabilities <- category_sums %>%
+  mutate(probability = total / total_relevant_plays)
+
+# Print the result
+print(category_probabilities)
+
+```
+
+## yardline_100 greater than 95
+
+```{r}
+play_type_counts_greaterthan95 <- football_data %>%
+  # Remove NAs
+  filter(!is.na(play_type)) %>%
+  filter(yardline_100 > 95) %>%
+  # Count occurrences of each play_type
+  count(play_type)
+
+# Print the result
+print(play_type_counts_greaterthan95)
+
+```
+
+```{r}
+# Create a new column to categorize the play types
+play_data_categorized <- play_type_counts_greaterthan95 %>%
+  mutate(category = case_when(
+    play_type == "field_goal" ~ "field_goal",
+    play_type == "punt" ~ "punt",
+    play_type %in% c("pass", "run") ~ "go for it",
+    TRUE ~ "other"  # For all other play types
+  ))
+
+# Sum the 'n' values for each category and exclude the "other" category
+category_sums <- play_data_categorized %>%
+  filter(category != "other") %>%
+  group_by(category) %>%
+  summarise(total = sum(n))
+
+# Calculate the total number of plays in the relevant categories (field_goal, go for it, punt)
+total_relevant_plays <- sum(category_sums$total)
+
+# Calculate probabilities for each category
+category_probabilities <- category_sums %>%
+  mutate(probability = total / total_relevant_plays)
+
+# Print the result
+print(category_probabilities)
+
+```
+
+
+
+
+
+
+
+
+
+
