@@ -28,26 +28,27 @@ early_downs <- function(down, ytg, fp) {
 
 down_four <- function(down, ytg, fp) {
   
-  # Choose play type probs ** UPDATE TO MATCH DATA **
+  # Choose play type probs 
   if (ytg < 2 && fp >= 70 && fp <= 95) {
-    p_fg   <- 0.4
-    p_gfi  <- 0.4
-    p_punt <- 0.2
+    p_fg   <- 0.0
+    p_gfi  <- 0.90855445
+    p_punt <- 0.09144555
   } 
   else if (fp < 70) {
-    p_fg   <- 0.0
-    p_gfi  <- 0.8
-    p_punt <- 0.2
+    p_fg   <- 0.03950503		
+    p_gfi  <- 0.91120785	
+    p_punt <- 0.04928712
   } 
   else if (fp > 95) {
     p_fg   <- 0.0
-    p_gfi  <- 0.3
-    p_punt <- 0.7
+    p_gfi  <- 0.91551785
+    p_punt <- 0.08448215
   } 
   else {
-    p_fg   <- 0.3
-    p_gfi  <- 0.5
-    p_punt <- 0.2
+    # Just in case something is not caught by the other cases
+    p_fg   <- 0.04
+    p_gfi  <- 0.92
+    p_punt <- 0.04
   }
   
   play_types <- c("GFI", "PUNT", "FG")
