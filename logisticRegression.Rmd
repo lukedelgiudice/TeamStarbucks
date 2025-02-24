@@ -1,0 +1,70 @@
+---
+title: "logisticRegression"
+output: html_document
+date: "2025-02-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load in data
+
+```{r}
+library(ggplot2)
+footballData <- readRDS("pbp2014-2024.rds")
+
+# Separate the field goal attempts
+fieldGoalData <- footballData[!is.na(footballData$play_type) & footballData$play_type == "field_goal", ]
+
+```
+
+# Logistic Regression
+
+```{r}
+# Convert "field_goal_result" to a binary where "made" = 1 and "missed" = 0
+fieldGoalData$field_goal_result <- factor(fieldGoalData$field_goal_result, levels = c("missed", "made"))
+
+# Fit the Logistic Model
+logistic_model <- glm(field_goal_result ~ yardline_100, data = fieldGoalData, family = "binomial")
+
+# View the model summary
+summary(logistic_model)
+```
+# Predict whether the field goal is made based on field position
+
+```{r}
+# Set the field position
+fieldPosition <- 50
+
+# Predict the chance the field goal is made
+predicted_prob <- predict(logistic_model, newdata = data.frame(yardline_100 = fieldPosition), type = "response")
+
+# Print the chance the field goal is made
+predicted_prob
+```
+
+```{r}
+# Use a the integers from 1 to 100 as our yardline values
+yardline_values <- seq(0, 100, by = 1)
+
+# Get the predicted probabilities for each yardline_100 value
+predicted_probs <- predict(logistic_model, newdata = data.frame(yardline_100 = yardline_values), type = "response")
+
+# Create a dataframe with only yardline_100 and predicted probabilities
+plot_data <- data.frame(yardline_100 = yardline_values, 
+                        predicted_prob = predicted_probs)
+
+ggplot(plot_data, aes(x = yardline_100, y = predicted_prob)) +
+  geom_area(fill = "blue", alpha = 0.3) + 
+  geom_line(color = "blue", size = 1) + 
+  labs(x = "Field Position", y = "Probability of a Made Field Goal", 
+       title = "Probability of Field Goal Made vs. Field Position") +
+  theme_minimal()
+
+```
+
+
+
+
+
