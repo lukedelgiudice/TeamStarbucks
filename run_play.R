@@ -1,6 +1,5 @@
-
-# FINAL TOUCHES: NEED TO REFERENCE DATA FOR ALL PROBABILTIES
-
+source("predict_field_goals.R")
+source("predict_fourth_down.R")
 
 early_downs <- function(down, ytg, fp) {
   # Turnover (B)
@@ -28,47 +27,18 @@ early_downs <- function(down, ytg, fp) {
 
 down_four <- function(down, ytg, fp) {
   
-  # Choose play type probs 
-  if (ytg < 2 && fp >= 70 && fp <= 95) {
-    p_fg   <- 0.0
-    p_gfi  <- 0.90855445
-    p_punt <- 0.09144555
-  } 
-  else if (fp < 70) {
-    p_fg   <- 0.03950503		
-    p_gfi  <- 0.91120785	
-    p_punt <- 0.04928712
-  } 
-  else if (fp > 95) {
-    p_fg   <- 0.0
-    p_gfi  <- 0.91551785
-    p_punt <- 0.08448215
-  } 
-  else {
-    # Just in case something is not caught by the other cases
-    p_fg   <- 0.04
-    p_gfi  <- 0.92
-    p_punt <- 0.04
-  }
+  # Call helper function to get the probabilities of the 3 options
+  fourth_down_probs <- predict_fourth_down(fp, ytg)
   
-  play_types <- c("GFI", "PUNT", "FG")
-  play_choice <- sample(play_types, size = 1, prob = c(p_gfi, p_punt, p_fg))
+  play_types <- c("FG", "GFI", "PUNT")
+  play_choice <- sample(play_types, size = 1, prob = fourth_down_probs) # Use new probabilities from helper
   
   # Field goal
   if (play_choice == "FG") {
     # Kick distance
     kick_distance <- (100 - fp) + 10 # Add 10 for hold distance
     
-    # Adjust success prob based on range
-    if (kick_distance < 40) {
-      fg_prob <- 0.8
-    } 
-    else if (kick_distance < 65) {
-      fg_prob <- 0.2
-    } 
-    else {
-      fg_prob <- max(0.2 - (kick_distance) / 750, 0)
-    }
+    fg_prob <- predict_field_goal(kick_distance)
     
     success <- runif(1) < fg_prob
     
