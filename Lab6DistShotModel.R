@@ -19,13 +19,14 @@ pointdif <- function(data) {
 
 hockeypointdiffquad<- pointdif(hockeyquad)
 
-hockeypointdiffquad$Type <- factor(hockeypointdiffquad$Type, levels = c("attempted","dna"))
-logistic_model <- glm(predictshotdist ~ , data = hockeypointdiffquad, family = "poisson")
+shot_rates <- hockeypointdiffquad %>%
+  filter(Event == "SHOT") %>% 
+  group_by(quadrant, pointdiff) %>%
+  summarise(shot_count = n(), .groups = "drop")
 
-predictshotdist <- function(quadrant, pointdif) {
+hockey_poisson_model <- glm(shot_count ~ as.factor(quadrant) + pointdiff, 
+                            data = shot_rates, 
+                            family = "poisson")
 
-  
-  
-  
-  }
+
   
