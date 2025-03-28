@@ -11,7 +11,7 @@ run_drive <- function(D, YTG, FP){
     # if we should stay with the current drive, simply call it again with the
     # new state
     run_drive(new_state$down, new_state$ytg, new_state$fp)
-  } 
+  }
   
   else {
     # Otherwise, return the state (which might be a turnover, field goal, etc)
