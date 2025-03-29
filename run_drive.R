@@ -19,6 +19,6 @@ run_drive <- function(D, YTG, FP){
   }
 }
 
-# TEST: starting drive on first and 10 at 20 yard line
+# test (starting drive on first and 10 at 20 yard line)
 result <- run_drive(1, 10, 20)
 print(result)

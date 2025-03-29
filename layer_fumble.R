@@ -1,19 +1,14 @@
-data <- readRDS("pbp2014-2024.rds")
-
-simulate_fumble <- function(play_type, player_position) {
-  if (play_type == "run") {
-    subsetData <- data[data$play_type == "run", ]
+simulate_fumble <- function(play_call, player_position, play_data) {
+  if (play_call == "run") {
+    subsetData <- play_data[play_data$play_call == "run", ]
     rate <- mean(as.numeric(subsetData$fumble), na.rm = TRUE)
   } 
-  
-  else if (play_type == "pass") {
-    subsetData <- data[data$play_type == "pass", ]
+  else if (play_call == "pass") {
+    subsetData <- play_data[play_data$play_call == "pass", ]
     rate <- mean(as.numeric(subsetData$fumble), na.rm = TRUE)
   } 
-  
   else {
     rate <- 0
   }
-  
-  return(runif(1) < rate)
+  runif(1) < rate
 }

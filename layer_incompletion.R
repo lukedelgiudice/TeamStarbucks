@@ -1,9 +1,6 @@
-data <- readRDS("pbp2014-2024.rds")
-
-simulate_incompletion <- function(play_type) {
-  if (play_type != "pass") return(FALSE)
-  subsetData <- data[data$play_type == "pass", ]
+simulate_incompletion <- function(play_call, play_data) {
+  if (play_call != "pass") return(FALSE)
+  subsetData <- play_data[play_data$play_call == "pass", ]
   rate <- mean(as.numeric(subsetData$incomplete_pass), na.rm = TRUE)
-  
-  return(runif(1) < rate)
+  runif(1) < rate
 }
