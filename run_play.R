@@ -48,22 +48,42 @@ regular_play_data <- position_ref_data %>%
   )
 
 simulate_fourth_down <- function(ytg, fp) {
-  fg_prob <- fourth_down_data %>%
+  fg_prob_base <- fourth_down_data %>%
     filter(!is.na(field_goal_attempt)) %>%
     summarize(prob = mean(field_goal_attempt == 1, na.rm = TRUE)) %>%
     pull(prob)
   
-  punt_prob <- fourth_down_data %>%
+  punt_prob_base <- fourth_down_data %>%
     filter(!is.na(punt_attempt)) %>%
     summarize(prob = mean(punt_attempt == 1, na.rm = TRUE)) %>%
     pull(prob)
   
-  gfi_prob <- 1 - (fg_prob + punt_prob)
+  gfi_prob_base <- 1 - (fg_prob_base + punt_prob_base)
+  
+  if (fp >= 65) {
+    weights <- c(fg = 3.0, gfi = 2.5, punt = 0.1)
+  }
+  
+  else if (fp >= 40) {
+    weights <- c(fg = 1.5, gfi = 1.2, punt = 0.8)
+  }
+  
+  else {
+    weights <- c(fg = 0.5, gfi = 0.7, punt = 1.8)
+  }
+  
+  adjusted_probs <- c(
+    fg = fg_prob_base * weights["fg"],
+    gfi = gfi_prob_base * weights["gfi"],
+    punt = punt_prob_base * weights["punt"]
+  )
+  
+  final_probs <- prop.table(adjusted_probs)
   
   play_choice <- sample(
     c("fg", "gfi", "punt"),
     size = 1,
-    prob = c(fg_prob, gfi_prob, punt_prob)
+    prob = final_probs
   )
   
   if (play_choice == "fg") {
