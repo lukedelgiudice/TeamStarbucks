@@ -7,9 +7,9 @@ assign_player_position <- function(df, ref_data, probs) {
       player_position = case_when(
         play_type %in% c("qb_kneel", "qb_spike") ~ "qb",
         play_type == "run" ~ sample(
-          probs$run$position, 
-          n(), 
-          replace = TRUE, 
+          probs$run$position,
+          n(),
+          replace = TRUE,
           prob = probs$run$prob
         ),
         play_type == "pass" ~ {

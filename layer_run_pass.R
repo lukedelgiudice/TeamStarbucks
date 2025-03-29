@@ -15,7 +15,7 @@ get_run_probability <- function(position, data) {
                          !is.na(data$receiver_player_id), ]
     
     return(mean(subsetData$play_call == "pass", na.rm = TRUE))
-  } 
+  }
   
   else if (position == "qb") {
     return(0)

@@ -25,6 +25,7 @@ position_probs <- list(
     mutate(prob = n/sum(n)) %>%
     select(-n),
   
+  # these should be improved, but unfortunately this data has no info on actual position
   pass = list(
     deep = c(wr = 0.8, te = 0.2),
     short = c(te = 0.5, wr = 0.3, hb = 0.2),
@@ -146,6 +147,7 @@ simulate_play <- function(down, ytg, fp, red_zone = FALSE) {
     
     if (simulate_incompletion(play_call, regular_play_data)) {
       new_down <- state$down + 1
+      
       return(list(down = new_down, ytg = state$ytg, fp = state$fp, exit_drive = 0, event = "incompletion", yards = 0))
     }
   }
