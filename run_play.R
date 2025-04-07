@@ -130,3 +130,24 @@ init_state <- list(
 )
 result <- run_play(init_state$down, init_state$ytg, init_state$fp, init_state$red_zone)
 print(result)
+
+
+
+
+
+# Additional time series modeling to decide when to perform unorthodox plays (ie: long pass on 3rd down)
+# Answer question of whether teams start to adjust defense to specific playstyle that unorthodox plays could beat
+# Subset to data where teams exhibit consistent playstyles and then make an "unexpected" play
+# Decide which play based on historical trends within each game (looking at game specific data)
+# Classify certain offense playstyles like short pass, long pass, etc
+# 
+# Need to remove the bias of unexpected plays which are actually expected, like passing on third and long
+# as a common running team, this can be done by also factoring in the traditional non-time series probabilities that
+# reflect what aggregate decision making to expect (this will include unorthodox plays but they should be out weighted)
+# 
+# The final outcome is an additional variable in the model which is waiting to activate an unorthodox play for +EP
+# 
+# Also need to consider the fact that unorthodox plays can not be used on repeat (at the very least need a cooldown)
+
+
+
