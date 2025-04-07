@@ -7,7 +7,7 @@ run_drive <- function(D, YTG, FP){
   new_state <- run_play(D, YTG, FP)
   
   # Check the flag: if exit_drive == 0, the drive continues
-  if(new_state$exit_drive == 0) {
+  if (new_state$exit_drive == 0) {
     # if we should stay with the current drive, simply call it again with the
     # new state
     run_drive(new_state$down, new_state$ytg, new_state$fp)
@@ -19,6 +19,6 @@ run_drive <- function(D, YTG, FP){
   }
 }
 
-# TEST: starting drive on first and 10 at 20 yard line
+# test (starting drive on first and 10 at 20 yard line)
 result <- run_drive(1, 10, 20)
 print(result)
