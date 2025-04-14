@@ -82,7 +82,7 @@ simulate_fourth_down <- function(ytg, fp) {
       }
       return(list(down = 1, ytg = 10, fp = new_fp, exit_drive = 0, event = "punt_mishandled"))
     }
-  } else if (play_choice == "gfi") {
+  } else if (play_choice == "gfi") { # switch this to instead use simulate_play and fix the 4th down checks in simulate_play
     conversion_prob <- ifelse(ytg <= 2, 0.7, 0.3)
     if (runif(1) < conversion_prob) {
       yg <- sample(ytg:15, 1)
