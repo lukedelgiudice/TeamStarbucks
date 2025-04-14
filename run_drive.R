@@ -32,7 +32,7 @@ classify_drive_tendency <- function(play_history) {
   if (length(play_history) < 3) return("neutral")
   
   n_plays <- min(5, length(play_history))
-  weights <- rev(seq(0.5, 1, length.out = n_plays)) # Recent plays weighted higher
+  weights <- rev(seq(0.5, 1, length.out = n_plays))
   play_types <- tail(sapply(play_history, function(x) x$play_type), n_plays)
   
   run_score <- sum(weights[play_types == "run"])/sum(weights)
