@@ -1,34 +1,33 @@
 library(dplyr)
-library(purrr)
 
-assign_player_position <- function(df, ref_data, probs) {
-  df %>%
-    mutate(
-      player_position = case_when(
-        play_type %in% c("qb_kneel", "qb_spike") ~ "qb",
-        play_type == "run" ~ sample(
-          probs$run$position,
-          n(),
-          replace = TRUE,
-          prob = probs$run$prob
-        ),
-        play_type == "pass" ~ {
-          pass_cat <- case_when(
-            !is.na(pass_length) ~ pass_length,
-            !is.na(pass_location) ~ ifelse(pass_location == "middle", "middle", "sideline"),
-            TRUE ~ "default"
-          )
-          
-          map_chr(pass_cat, function(cat) {
-            switch(cat,
-                   "deep" = sample(names(probs$pass$deep), 1, prob = probs$pass$deep),
-                   "short" = sample(names(probs$pass$short), 1, prob = probs$pass$short),
-                   "middle" = sample(names(probs$pass$middle), 1, prob = probs$pass$middle),
-                   "sideline" = sample(names(probs$pass$sideline), 1, prob = probs$pass$sideline),
-                   sample(names(probs$pass$default), 1, prob = probs$pass$default))
-          })
-        },
-        TRUE ~ "unknown"
-      )
-    )
+assign_player_position <- function(down, ytg, fp, red_zone, ref_data) {
+  # Filter historical data based on game state
+  subset_data <- ref_data %>%
+    filter(down == !!down,
+           ydstogo == !!ytg,
+           yardline_100 == 100 - !!fp,
+           red_zone == !!red_zone)
+  
+  # Broaden filter if insufficient data
+  if (nrow(subset_data) < 10) {
+    subset_data <- ref_data %>%
+      filter(down == !!down,
+             ydstogo >= !!ytg - 2 & ydstogo <= !!ytg + 2,
+             yardline_100 >= (100 - !!fp) - 10 & yardline_100 <= (100 - !!fp) + 10)
+  }
+  
+  # Calculate frequencies of player positions
+  position_counts <- subset_data %>%
+    count(player_position) %>%
+    mutate(prob = n / sum(n))
+  
+  # Sample player position based on frequencies
+  if (nrow(position_counts) > 0) {
+    player_position <- sample(position_counts$player_position, 1, prob = position_counts$prob)
+  } else {
+    # Fallback to uniform distribution
+    player_position <- sample(c("hb", "qb", "wr", "te"), 1)
+  }
+  
+  return(player_position)
 }

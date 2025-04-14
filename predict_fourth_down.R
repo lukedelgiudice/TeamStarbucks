@@ -1,4 +1,5 @@
-# Multinomial regression library
+# predict_fourth_down.R
+
 library(nnet)
 
 # Load dataset
@@ -9,8 +10,8 @@ fourthDownData <- footballData[footballData$down == 4 & footballData$play_type %
 
 # Make fourth_down_options a factor
 fourthDownData$fourth_down_options <- factor(
-  ifelse(fourthDownData$play_type == "field_goal", "FG", 
-         ifelse(fourthDownData$play_type == "punt", "PUNT", "GFI")),
+  if_else(fourthDownData$play_type == "field_goal", "FG", 
+          if_else(fourthDownData$play_type == "punt", "PUNT", "GFI")),
   levels = c("FG", "GFI", "PUNT")
 )
 
@@ -19,13 +20,6 @@ multinom_model <- multinom(fourth_down_options ~ yardline_100 + ydstogo, data = 
 
 # Function to return predicted probabilities
 predict_fourth_down <- function(fp, ytg) {
-  # Use predict with the inputs given as the 2 predictors
   predictions <- predict(multinom_model, newdata = data.frame(yardline_100 = fp, ydstogo = ytg), type = "probs")
   predictions
 }
-
-# test
-predict_fourth_down(5, 3)
-
-
-

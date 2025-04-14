@@ -1,14 +1,17 @@
-simulate_fumble <- function(play_call, player_position, play_data) {
-  if (play_call == "run") {
-    subsetData <- play_data[play_data$play_call == "run", ]
-    rate <- mean(as.numeric(subsetData$fumble), na.rm = TRUE)
-  } 
-  else if (play_call == "pass") {
-    subsetData <- play_data[play_data$play_call == "pass", ]
-    rate <- mean(as.numeric(subsetData$fumble), na.rm = TRUE)
-  } 
-  else {
-    rate <- 0
-  }
-  runif(1) < rate
+library(dplyr)
+
+simulate_fumble <- function(play_call, player_position, ref_data) {
+  if (play_call != "run") return(FALSE)
+  
+  # Filter data for runs with the given player position
+  subset_data <- ref_data %>%
+    filter(play_call == "run",
+           player_position == !!player_position)
+  
+  # Calculate fumble rate
+  fumble_rate <- mean(subset_data$fumble, na.rm = TRUE)
+  if (is.na(fumble_rate)) fumble_rate <- 0.015 # Default rate
+  
+  # Simulate fumble
+  return(runif(1) < fumble_rate)
 }

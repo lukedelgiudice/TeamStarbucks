@@ -1,48 +1,35 @@
 library(dplyr)
 
-get_run_probability <- function(position, data) {
-  if (position == "hb") {
-    subsetData <- data[data$play_call %in% c("run", "pass") &
-                         data$rusher_player_id != "" &
-                         !is.na(data$rusher_player_id), ]
-    
-    return(mean(subsetData$play_call == "run", na.rm = TRUE))
+assign_play_type <- function(player_position, down, ytg, fp, red_zone, ref_data) {
+  # Filter historical data based on player position and game state
+  subset_data <- ref_data %>%
+    filter(player_position == !!player_position,
+           down == !!down,
+           ydstogo == !!ytg,
+           yardline_100 == 100 - !!fp,
+           red_zone == !!red_zone)
+  
+  # Broaden filter if insufficient data
+  if (nrow(subset_data) < 10) {
+    subset_data <- ref_data %>%
+      filter(player_position == !!player_position,
+             down == !!down,
+             ydstogo >= !!ytg - 2 & ydstogo <= !!ytg + 2,
+             yardline_100 >= (100 - !!fp) - 10 & yardline_100 <= (100 - !!fp) + 10)
   }
   
-  else if (position %in% c("wr", "te")) {
-    subsetData <- data[data$play_call %in% c("run", "pass") &
-                         data$receiver_player_id != "" &
-                         !is.na(data$receiver_player_id), ]
-    
-    return(mean(subsetData$play_call == "pass", na.rm = TRUE))
+  # Calculate probabilities of run and pass
+  play_type_counts <- subset_data %>%
+    count(play_call) %>%
+    mutate(prob = n / sum(n))
+  
+  # Sample play type based on probabilities
+  if (nrow(play_type_counts) > 0) {
+    play_call <- sample(play_type_counts$play_call, 1, prob = play_type_counts$prob)
+  } else {
+    # Fallback based on player position
+    play_call <- if (player_position %in% c("hb", "qb")) "run" else "pass"
   }
   
-  else if (position == "qb") {
-    return(0)
-  }
-  
-  else {
-    return(0.5)
-  }
-}
-
-assign_run_pass <- function(df, data) {
-  df <- df %>% 
-    rowwise() %>% 
-    mutate(
-      play_call = if (player_position == "hb") {
-        if (runif(1) < get_run_probability(player_position, data)) "run" else "pass"
-      }
-      else if (player_position %in% c("wr", "te")) {
-        if (runif(1) < get_run_probability(player_position, data)) "pass" else "run"
-      }
-      else if (player_position == "qb") {
-        "pass"
-      }
-      else {
-        NA_character_
-      }
-    ) %>% 
-    ungroup()
-  return(df)
+  return(play_call)
 }

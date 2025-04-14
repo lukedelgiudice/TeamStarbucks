@@ -35,46 +35,29 @@ classify_drive_tendency <- function(play_history) {
   weights <- rev(seq(0.5, 1, length.out = n_plays))
   play_types <- tail(sapply(play_history, function(x) x$play_type), n_plays)
   
-  run_score <- sum(weights[play_types == "run"])/sum(weights)
-  pass_score <- sum(weights[play_types == "pass"])/sum(weights)
+  run_score <- sum(weights[play_types == "run"]) / sum(weights)
+  pass_score <- sum(weights[play_types == "pass"]) / sum(weights)
   
   case_when(
     run_score > 0.65 ~ "run_heavy",
     pass_score > 0.65 ~ "pass_heavy",
-    TRUE ~ "balanced"
+    TRUE ~ "neutral"
   )
 }
 
 get_expected_play_type <- function(down, ytg, fp) {
-  base_exp <- case_when(
+  case_when(
     down == 3 && ytg > 5 ~ "pass",
     ytg <= 2 ~ "run",
     down == 4 ~ "pass",
     fp >= 75 ~ "pass",
     TRUE ~ "run"
   )
-  
-  if (fp >= 80) {
-    if (ytg <= 3) return("run")
-    return("pass_short")
-  }
-  base_exp
 }
 
-
-
-precompute_unexpected_distributions()
-
+# Example runs
 result <- run_drive(1, 10, 20)
 print(result)
 
 result <- run_drive(1, 10, 85)
 print(result)
-
-
-unexpected_data <- readRDS("unexpected_plays_data.rds")
-ggplot(unexpected_data, aes(x = yards_gained)) +
-  geom_density(aes(fill = play_type), alpha = 0.5) +
-  facet_wrap(~unexpected_type)
-
-
