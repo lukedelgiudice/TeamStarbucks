@@ -1,5 +1,11 @@
 sample_yards_gained <- function(play_call, player_position, pass_length, red_zone, unexpected) {
-  distributions <- readRDS("yards_distributions.rds")
+  if (unexpected) {
+    distributions <- readRDS("yards_distributions_unexpected.rds")
+  }
+  
+  else {
+    distributions <- readRDS("yards_distributions.rds")
+  }
   
   key <- if (play_call == "pass") {
     paste(play_call, player_position, pass_length, red_zone, unexpected, sep = "_")
