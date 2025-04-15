@@ -4,7 +4,6 @@ library(mclust)
 library(dplyr)
 library(purrr)
 
-# Function to assign player_position for analysis.
 assign_player_position_analysis <- function(data, ref_data, probs) {
   data %>%
     mutate(player_position = case_when(
@@ -52,8 +51,7 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   
   if (play_call == "pass") {
     subsetData <- subsetData %>%
-      filter(interception == 0,
-             incomplete_pass == 0)
+      filter(interception == 0, incomplete_pass == 0)
   }
   
   if (red_zone) {
@@ -62,23 +60,19 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
     subsetData <- subsetData %>% filter(yardline_100 > 20)
   }
   
-  subsetData <- subsetData %>% 
-    filter(!is.na(yards_gained))
+  subsetData <- subsetData %>% filter(!is.na(yards_gained))
   
   if (nrow(subsetData) < 30) {
     message("Too few observations - using play_call level data")
     subsetData <- regular_play_data %>%
-      filter(play_call == play_call,
-             fumble == 0)
+      filter(play_call == play_call, fumble == 0)
     
     if (play_call == "pass") {
       subsetData <- subsetData %>%
-        filter(interception == 0,
-               incomplete_pass == 0)
+        filter(interception == 0, incomplete_pass == 0)
     }
     
-    subsetData <- subsetData %>%
-      filter(!is.na(yards_gained))
+    subsetData <- subsetData %>% filter(!is.na(yards_gained))
   }
   
   if (nrow(subsetData) == 0) stop("no valid data for this leaf")

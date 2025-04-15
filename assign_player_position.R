@@ -1,7 +1,6 @@
 # assign_player_position.R
 library(dplyr)
 
-# For simulation of an NFL drive:
 assign_player_position_drive <- function(down, ytg, fp, red_zone, ref_data) {
   subset_data <- ref_data %>%
     filter(down == down,

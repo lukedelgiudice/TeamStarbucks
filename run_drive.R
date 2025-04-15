@@ -2,6 +2,7 @@
 source("run_play.R")
 
 run_drive <- function(D, YTG, FP, play_history = list()) {
+  # Determine red zone from yardline_100 = 100 - FP.
   red_zone <- (100 - FP) <= 20
   
   new_state <- run_play(D, YTG, FP, red_zone, play_history)
