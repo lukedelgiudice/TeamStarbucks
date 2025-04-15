@@ -1,3 +1,4 @@
+# run_drive.R
 source("run_play.R")
 
 run_drive <- function(D, YTG, FP, play_history = list()) {
@@ -28,34 +29,7 @@ run_drive <- function(D, YTG, FP, play_history = list()) {
   }
 }
 
-classify_drive_tendency <- function(play_history) {
-  if (length(play_history) < 3) return("neutral")
-  
-  n_plays <- min(5, length(play_history))
-  weights <- rev(seq(0.5, 1, length.out = n_plays))
-  play_types <- tail(sapply(play_history, function(x) x$play_type), n_plays)
-  
-  run_score <- sum(weights[play_types == "run"]) / sum(weights)
-  pass_score <- sum(weights[play_types == "pass"]) / sum(weights)
-  
-  case_when(
-    run_score > 0.65 ~ "run_heavy",
-    pass_score > 0.65 ~ "pass_heavy",
-    TRUE ~ "neutral"
-  )
-}
-
-get_expected_play_type <- function(down, ytg, fp) {
-  case_when(
-    down == 3 && ytg > 5 ~ "pass",
-    ytg <= 2 ~ "run",
-    down == 4 ~ "pass",
-    fp >= 75 ~ "pass",
-    TRUE ~ "run"
-  )
-}
-
-# Example runs
+# Example runs:
 result <- run_drive(1, 10, 20)
 print(result)
 

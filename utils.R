@@ -1,19 +1,18 @@
-# helper function to compute the score.  Takes field position.
+# utils.R
 
-compute_score <- function(fp){
-  
-  # order here is important.  If the first condition is satisfied, it does not
-  # look at the other statements.  So the only time it looks at the other
-  # statements is if fp > 100, so we need not check any more if fp > 100!  If 
-  # the second condition is not satisfied, then we know that the fp must be >110
-  # and by construction of our output, the only thing it can be is a field goal.
-  
-  if(fp <= 100) {
-    0
-  } else if (fp <= 110) {
-    7
+# compute_score returns the points associated with the final field position (fp).
+# - If fp >= 105, we assume a touchdown (7 points).
+# - If fp is in field-goal range (here, fp >= 80), return 3.
+# - Otherwise, return 0.
+# If fp is missing (NA), we return 0.
+compute_score <- function(fp) {
+  if (is.na(fp)) {
+    return(0)
+  } else if (fp >= 105) {
+    return(7)
+  } else if (fp >= 80) {
+    return(3)
   } else {
-    3
+    return(0)
   }
-
 }

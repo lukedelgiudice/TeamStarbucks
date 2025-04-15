@@ -1,7 +1,18 @@
+# examine_leaf_distribution.R
 library(ggplot2)
 library(mclust)
 library(dplyr)
 library(purrr)
+
+# Function to assign player_position for analysis.
+assign_player_position_analysis <- function(data, ref_data, probs) {
+  data %>%
+    mutate(player_position = case_when(
+      play_call == "run" ~ ifelse(!is.na(rusher_player_id) & rusher_player_id != "", "hb", "qb"),
+      play_call == "pass" ~ if_else(!is.na(pass_length) & pass_length == "deep", "wr", "te"),
+      TRUE ~ "unknown"
+    ))
+}
 
 examine_leaf_distribution <- function(play_call, player_position, red_zone = FALSE) {
   raw_data <- readRDS("pbp2014-2024.rds")
@@ -32,14 +43,11 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
         play_type == "pass" ~ "pass"
       )
     ) %>%
-    assign_player_position(
-      ref_data = position_ref_data,
-      probs = position_probs
-    )
+    assign_player_position_analysis(ref_data = position_ref_data, probs = position_probs)
   
   subsetData <- regular_play_data %>%
-    filter(play_call == !!play_call,
-           player_position == !!player_position,
+    filter(play_call == play_call,
+           player_position == player_position,
            fumble == 0)
   
   if (play_call == "pass") {
@@ -50,9 +58,7 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   
   if (red_zone) {
     subsetData <- subsetData %>% filter(yardline_100 <= 20)
-  } 
-  
-  else {
+  } else {
     subsetData <- subsetData %>% filter(yardline_100 > 20)
   }
   
@@ -62,7 +68,7 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   if (nrow(subsetData) < 30) {
     message("Too few observations - using play_call level data")
     subsetData <- regular_play_data %>%
-      filter(play_call == !!play_call,
+      filter(play_call == play_call,
              fumble == 0)
     
     if (play_call == "pass") {
@@ -71,7 +77,7 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
                incomplete_pass == 0)
     }
     
-    subsetData <- subsetData %>% 
+    subsetData <- subsetData %>%
       filter(!is.na(yards_gained))
   }
   
@@ -79,9 +85,9 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   
   p <- ggplot(subsetData, aes(x = yards_gained)) +
     geom_density(fill = "blue", alpha = 0.5) +
-    labs(title = paste("yards gained dist (", play_call, player_position,
+    labs(title = paste("Yards Gained Distribution (", play_call, player_position,
                        ifelse(red_zone, "red zone )", "not red zone )")),
-         x = "yg", y = "density")
+         x = "Yards Gained", y = "Density")
   print(p)
   
   fit <- Mclust(subsetData$yards_gained, G = 1:3, verbose = FALSE)
@@ -90,4 +96,5 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   return(fit)
 }
 
+# Example execution:
 fit_leaf <- examine_leaf_distribution("run", "hb", red_zone = FALSE)
