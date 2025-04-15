@@ -1,5 +1,6 @@
 source("run_drive.R")
 source("utils.R")
+source("assign_player_position.R")
 
 run_epoch <- function(down, ytg, fp, max_drives = 10) {
   team_status <- -1
@@ -28,7 +29,8 @@ run_epoch <- function(down, ytg, fp, max_drives = 10) {
       ytg <- NA
       fp <- tmp_state$FP
       no_score <- FALSE
-      cat("drive ended with scoring event:", tmp_state$event, "\n")
+      event <- tmp_state$event
+      cat("drive ended with scoring event:", event, "\n")
     }
     
     else {
@@ -36,11 +38,12 @@ run_epoch <- function(down, ytg, fp, max_drives = 10) {
       ytg <- 10
       fp <- tmp_state$FP
       no_score <- TRUE
-      cat("drive ended with non-scoring event:", tmp_state$event, "\n")
+      event <- tmp_state$event
+      cat("drive ended with non-scoring event:", event, "\n")
     }
   }
   
-  score <- team_status * compute_score(fp)
+  score <- team_status * compute_score(event)
   cat("final field position (fp):", fp, ", drives:", cumulative_drives, ", team_status:", team_status, ", score:", score, "\n")
   
   return(score)

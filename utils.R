@@ -1,13 +1,13 @@
-compute_score <- function(fp) {
-  if (is.na(fp)) {
+compute_score <- function(event) {
+  if (is.na(event)) {
     return(0)
   }
   
-  else if (fp >= 105) {
+  else if (event == "td") {
     return(7)
   }
   
-  else if (fp >= 80) {
+  else if (event == "fg") {
     return(3)
   }
   
