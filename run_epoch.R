@@ -6,6 +6,12 @@ run_epoch <- function(down, ytg, fp, max_drives = 10) {
   team_status <- -1
   cumulative_drives <- 0
   
+  original_rate <- if (exists("UNEXPECTED_RATE", envir = .GlobalEnv)) {
+    get("UNEXPECTED_RATE", envir = .GlobalEnv)
+  } else {
+    0
+  }
+  
   if (!is.na(fp) && fp > 100) {
     no_score <- FALSE
   }
@@ -19,6 +25,14 @@ run_epoch <- function(down, ytg, fp, max_drives = 10) {
   while(no_score && cumulative_drives < max_drives) {
     team_status <- team_status * -1
     cumulative_drives <- cumulative_drives + 1
+    
+    if (team_status == -1) {
+      assign("UNEXPECTED_RATE", 0, envir = .GlobalEnv)
+    }
+    
+    else {
+      assign("UNEXPECTED_RATE", original_rate, envir = .GlobalEnv)
+    }
     
     cat("drive", cumulative_drives, ": starting state of down =", down, ", ytg =", ytg, ", fp =", fp, ", team_status =", team_status, "\n")
     
