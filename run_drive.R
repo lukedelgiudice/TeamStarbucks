@@ -1,8 +1,6 @@
-# run_drive.R
 source("run_play.R")
 
 run_drive <- function(D, YTG, FP, play_history = list()) {
-  # Determine red zone from yardline_100 = 100 - FP.
   red_zone <- (100 - FP) <= 20
   
   new_state <- run_play(D, YTG, FP, red_zone, play_history)
@@ -19,7 +17,9 @@ run_drive <- function(D, YTG, FP, play_history = list()) {
   
   if (new_state$exit_drive == 0) {
     run_drive(new_state$down, new_state$ytg, new_state$fp, updated_history)
-  } else {
+  }
+  
+  else {
     list(
       D = new_state$down,
       YTG = new_state$ytg,
@@ -30,9 +30,8 @@ run_drive <- function(D, YTG, FP, play_history = list()) {
   }
 }
 
-# Example runs:
-result <- run_drive(1, 10, 20)
-print(result)
+# result <- run_drive(1, 10, 20)
+# print(result)
 
-result <- run_drive(1, 10, 85)
-print(result)
+# result <- run_drive(1, 10, 85)
+# print(result)

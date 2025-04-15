@@ -1,4 +1,3 @@
-# layer_player_position.R
 library(dplyr)
 
 assign_player_position <- function(down, ytg, fp, red_zone, ref_data) {
@@ -21,7 +20,9 @@ assign_player_position <- function(down, ytg, fp, red_zone, ref_data) {
   
   if (nrow(position_counts) > 0) {
     player_position <- sample(position_counts$player_position, 1, prob = position_counts$prob)
-  } else {
+  }
+  
+  else {
     player_position <- sample(c("hb", "qb", "wr", "te"), 1)
   }
   

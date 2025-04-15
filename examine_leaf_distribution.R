@@ -1,4 +1,3 @@
-# examine_leaf_distribution.R
 library(ggplot2)
 library(mclust)
 library(dplyr)
@@ -56,20 +55,22 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   
   if (red_zone) {
     subsetData <- subsetData %>% filter(yardline_100 <= 20)
-  } else {
+  }
+  
+  else {
     subsetData <- subsetData %>% filter(yardline_100 > 20)
   }
   
   subsetData <- subsetData %>% filter(!is.na(yards_gained))
   
   if (nrow(subsetData) < 30) {
-    message("Too few observations - using play_call level data")
+    message("too few observations, using play_call level data")
+    
     subsetData <- regular_play_data %>%
       filter(play_call == play_call, fumble == 0)
     
     if (play_call == "pass") {
-      subsetData <- subsetData %>%
-        filter(interception == 0, incomplete_pass == 0)
+      subsetData <- subsetData %>% filter(interception == 0, incomplete_pass == 0)
     }
     
     subsetData <- subsetData %>% filter(!is.na(yards_gained))
@@ -90,5 +91,5 @@ examine_leaf_distribution <- function(play_call, player_position, red_zone = FAL
   return(fit)
 }
 
-# Example execution:
+# example
 fit_leaf <- examine_leaf_distribution("run", "hb", red_zone = FALSE)

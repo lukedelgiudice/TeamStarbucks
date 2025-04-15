@@ -1,4 +1,3 @@
-# layer_run_pass.R
 library(dplyr)
 
 assign_play_type <- function(player_position, down, ytg, fp, red_zone, ref_data) {
@@ -23,7 +22,9 @@ assign_play_type <- function(player_position, down, ytg, fp, red_zone, ref_data)
   
   if (nrow(play_type_counts) > 0) {
     play_call <- sample(play_type_counts$play_call, 1, prob = play_type_counts$prob)
-  } else {
+  }
+  
+  else {
     play_call <- if (player_position %in% c("hb", "qb")) "run" else "pass"
   }
   

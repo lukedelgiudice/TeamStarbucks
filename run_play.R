@@ -1,30 +1,90 @@
-# run_play.R
-# Source required layers and fourth–down prediction modules.
-source("layer_player_position.R")   # Provides assign_player_position_drive()
-source("layer_run_pass.R")           # Provides assign_play_type()
-source("layer_fumble.R")             # Provides simulate_fumble()
-source("layer_interception.R")       # Provides simulate_interception()
-source("layer_incompletion.R")       # Provides simulate_incompletion()
-source("layer_yards_gained.R")       # Provides sample_yards_gained()
-source("predict_fourth_down.R")      # Provides predict_fourth_down()
-source("predict_field_goal.R")       # Provides predict_field_goal()
+source("layer_player_position.R")
+source("layer_run_pass.R")
+source("layer_fumble.R")
+source("layer_interception.R")
+source("layer_incompletion.R")
+source("layer_yards_gained.R")
+source("predict_fourth_down.R")
+source("predict_field_goal.R")
 
 library(dplyr)
 
-# Simple helper functions
 classify_drive_tendency <- function(play_history) {
-  if (length(play_history) == 0) return("neutral")
+  n <- length(play_history)
+  if (n == 0) return("neutral")
+
+  recent <- tail(play_history, min(5, n))
+
+  weights <- seq(0.5, 1, length.out = length(recent))
+  types <- sapply(recent, function(x) x$play_type)
+
+  run_score <- sum(weights[types == "run"])
+  pass_score <- sum(weights[types == "pass"])
+  total_weight <- sum(weights[types %in% c("run","pass")])
+  
+  if (total_weight == 0) return("neutral")
+  
+  run_ratio <- run_score / total_weight
+  pass_ratio <- pass_score / total_weight
+  
+  if (run_ratio > 0.65) return("run-heavy")
+  if (pass_ratio > 0.65) return("pass-heavy")
+  
   return("neutral")
 }
 
+get_unexpected_trigger <- function(play_history) {
+  n_plays <- length(play_history)
+  
+  if (n_plays == 0) return(FALSE)
+  
+  if (exists("UNEXPECTED_RATE", envir = .GlobalEnv)) {
+    lambda <- get("UNEXPECTED_RATE", envir = .GlobalEnv)
+  }
+  
+  else {
+    lambda <- 0.1
+  }
+
+  p_trigger <- 1 - exp(-lambda * n_plays)
+  return(runif(1) < p_trigger)
+}
+
 get_expected_play_type <- function(down, ytg, fp) {
-  if (down >= 3 && ytg >= 7) return("pass")
-  return("run")
+
+  prob_pass <- 0.5
+  
+  if (down == 1) {
+    if (ytg >= 10) prob_pass <- 0.55
+    else prob_pass <- 0.45
+  }
+  
+  else if (down == 2) {
+    if (ytg >= 8) prob_pass <- 0.65
+    else if (ytg <= 3) prob_pass <- 0.4
+  }
+  
+  else if (down >= 3) {
+    if (ytg >= 7) prob_pass <- 0.85
+    else if (ytg <= 2) prob_pass <- 0.6
+  }
+  
+  if (fp < 20) {
+    prob_pass <- prob_pass + 0.05
+  }
+  
+  else if (fp > 80) {
+    prob_pass <- prob_pass - 0.05
+  }
+  
+  prob_pass <- max(min(prob_pass, 1), 0)
+  
+  play_type <- sample(c("pass", "run"), size = 1, prob = c(prob_pass, 1 - prob_pass))
+  return(play_type)
 }
 
 raw_data <- readRDS("pbp2014-2024.rds")
 
-# Preprocess historical play data.
 play_data <- raw_data %>%
   filter(play_type %in% c("run", "pass")) %>%
   mutate(
@@ -36,121 +96,159 @@ play_data <- raw_data %>%
                                     "wr"),
       TRUE ~ "unknown"
     ),
-    # Red zone determined by yardline_100 = (100 - fp)
     red_zone = yardline_100 <= 20
   )
 
-#############################
-# New: simulate_punt() function
-#############################
 simulate_punt <- function(fp) {
-  # Sample a punt distance – mean 40 yards, sd 5 yards, minimum 10 yards.
-  punt_yards <- round(rnorm(1, mean = 40, sd = 5))
+  available <- 100 - fp
+  punt_data <- raw_data %>% filter(punt_attempt == 1, !is.na(kick_distance))
+  
+  subset_punts <- punt_data %>% 
+    filter(abs((100 - yardline_100) - fp) < 10)
+  
+  if (nrow(subset_punts) < 20) {
+    subset_punts <- punt_data
+  }
+  
+  punt_yards <- round(sample(subset_punts$kick_distance, 1))
   punt_yards <- max(10, punt_yards)
+  
   return(punt_yards)
 }
 
-### Fourth-down simulation helper
 simulate_fourth_down <- function(fp, ytg) {
-  # Get probabilities for FG, GFI, and PUNT.
   options_prob <- predict_fourth_down(fp, ytg)
   option <- sample(names(options_prob), 1, prob = options_prob)
   
+  if (option == "FG" && fp < 60) {
+    option <- "PUNT"
+  }
+  
   if (option == "FG") {
-    # Field goal: use (100 - fp) as yardline.
     prob_fg <- predict_field_goal(100 - fp)
     made <- runif(1) < prob_fg
+    
     if (made) {
-      return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1,
-                  event = "fg", yards = 0, play_type = "field_goal"))
-    } else {
-      return(list(down = 5, ytg = ytg, fp = fp, exit_drive = 1,
-                  event = "missed_fg", yards = 0, play_type = "field_goal"))
+      return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "fg", yards = 0, play_type = "field_goal"))
     }
-  } else if (option == "PUNT") {
-    # Punt: simulate punt yards and flip field position.
+    
+    else {
+      return(list(down = 5, ytg = ytg, fp = fp, exit_drive = 1, event = "missed_fg", yards = 0, play_type = "field_goal"))
+    }
+  }
+  
+  else if (option == "PUNT") {
     punt_yards <- simulate_punt(fp)
+    
     new_fp <- 100 - (fp + punt_yards)
-    # Clamp new field position between 10 (own 10) and 90 (opponent's 10).
-    new_fp <- max(10, min(new_fp, 90))
-    return(list(down = 5, ytg = ytg, fp = new_fp, exit_drive = 1,
-                event = "punt", yards = punt_yards, play_type = "punt"))
-  } else if (option == "GFI") {
-    # Go for it.
+    new_fp <- max(1, min(new_fp, 99))
+    
+    return(list(down = 5, ytg = ytg, fp = new_fp, exit_drive = 1, event = "punt", yards = punt_yards, play_type = "punt"))
+  }
+  
+  else if (option == "GFI") {
     new_state <- simulate_play_internal(4, ytg, fp, (100 - fp) <= 20)
+    
     if (new_state$yards < ytg) {
       new_state$exit_drive <- 1
       new_state$event <- "turnover_on_downs"
-      # Flip field position on turnover.
       new_state$fp <- 100 - fp
       new_state$down <- 5
+      
       return(new_state)
-    } else {
+    }
+    
+    else {
       new_state$down <- 1
       new_state$ytg <- 10
+      
       return(new_state)
     }
   }
 }
 
-### Internal simulation (for downs 1-3 and fourth down GFI plays)
 simulate_play_internal <- function(down, ytg, fp, red_zone, play_history = list()) {
+  
+  unexpected_trigger <- get_unexpected_trigger(play_history)
+  
   drive_tendency <- classify_drive_tendency(play_history)
   expected_play <- get_expected_play_type(down, ytg, fp)
-  unexpected_threshold <- 0.15
-  unexpected_trigger <- runif(1) < unexpected_threshold
   
   if (unexpected_trigger && drive_tendency != "neutral") {
-    play_call <- if (expected_play == "run") "pass" else "run"
-    pass_length <- if (play_call == "pass") {
-      if (red_zone) "short" else sample(c("short", "deep"), 1)
-    } else NA_character_
-    player_position <- if (play_call == "run") "hb" else ifelse(pass_length == "deep", "wr", "te")
-    unexpected_flag <- TRUE
-  } else {
+    if (drive_tendency == "run-heavy") {
+      play_call <- "pass"
+      pass_length <- if (red_zone) "short" else "deep"
+      player_position <- "wr"
+      unexpected_flag <- TRUE
+    }
+    
+    else if (drive_tendency == "pass-heavy") {
+      play_call <- "run"
+      unexpected_flag <- TRUE
+      pass_length <- NA_character_
+      player_position <- "hb"
+    }
+  }
+  
+  else {
     player_position <- assign_player_position_drive(down, ytg, fp, red_zone, play_data)
     play_call <- assign_play_type(player_position, down, ytg, fp, red_zone, play_data)
+    
     pass_length <- if (play_call == "pass") {
-      if (down == 3 && ytg > 10) "deep" else "short"
-    } else NA_character_
+      if (runif(1) < if (down == 3 && ytg > 8) 0.85 else 0.15) {
+        "deep"
+      }
+      
+      else {
+        "short"
+      }
+    }
+    
+    else NA_character_
     unexpected_flag <- FALSE
   }
   
-  # Simulate turnovers.
   if (play_call == "run") {
     if (simulate_fumble(play_call, player_position, play_data)) {
-      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1,
-                  event = "fumble", yards = 0, play_type = play_call))
+      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1, event = "fumble", yards = 0, play_type = play_call))
     }
-  } else if (play_call == "pass") {
+  }
+  
+  else if (play_call == "pass") {
     if (simulate_interception(play_call, pass_length, play_data)) {
-      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1,
-                  event = "interception", yards = 0, play_type = play_call))
+      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1, event = "interception", yards = 0, play_type = play_call))
     }
+    
     if (simulate_incompletion(play_call, pass_length, play_data)) {
       new_down <- down + 1
       exit_drive <- if (new_down > 4) 1 else 0
       event <- if (new_down > 4) "turnover_on_downs" else "incompletion"
-      return(list(down = new_down, ytg = ytg, fp = fp, exit_drive = exit_drive,
-                  event = event, yards = 0, play_type = play_call))
+      
+      return(list(down = new_down, ytg = ytg, fp = fp, exit_drive = exit_drive, event = event, yards = 0, play_type = play_call))
     }
   }
   
-  # Sample yards gained.
   yards <- sample_yards_gained(play_call, player_position, pass_length, red_zone, unexpected_flag)
   max_yards <- 100 - fp
   yards <- min(yards, max_yards)
   
   new_fp <- fp + yards
-  new_ytg <- max(0, ytg - yards)
+  
+  if(new_fp > 90) {
+    new_ytg <- 100 - new_fp
+  }
+  
+  else {
+    new_ytg <- max(0, ytg - yards)
+  }
+  
   new_down <- if (new_ytg == 0) 1 else (down + 1)
   new_ytg <- if (new_ytg == 0) 10 else new_ytg
   exit_drive <- 0
   event <- "play_complete"
   
   if (new_fp >= 100) {
-    return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1,
-                event = "td", yards = yards, play_type = play_call))
+    return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "td", yards = yards, play_type = play_call))
   }
   
   if (new_down > 4) {
@@ -170,14 +268,14 @@ simulate_play_internal <- function(down, ytg, fp, red_zone, play_history = list(
   )
 }
 
-### Main simulation function – uses fourth down simulation when needed.
 simulate_play <- function(down, ytg, fp, red_zone, play_history = list()) {
   if (down == 4) {
     return(simulate_fourth_down(fp, ytg))
-  } else {
+  }
+  
+  else {
     return(simulate_play_internal(down, ytg, fp, red_zone, play_history))
   }
 }
 
-# Expose simulate_play for use by run_drive.R.
 run_play <- simulate_play

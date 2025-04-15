@@ -1,9 +1,7 @@
-# precompute_yards_distributions.R
 library(dplyr)
 library(mixtools)
 
 precompute_yards_distributions <- function(raw_data) {
-  # Preprocess data.
   play_data <- raw_data %>%
     filter(play_type %in% c("run", "pass")) %>%
     mutate(
@@ -26,7 +24,6 @@ precompute_yards_distributions <- function(raw_data) {
     ) %>%
     filter(valid_play)
   
-  # Define categories.
   categories <- play_data %>%
     distinct(play_call, player_position, pass_length, red_zone) %>%
     mutate(unexpected = FALSE)
@@ -35,14 +32,17 @@ precompute_yards_distributions <- function(raw_data) {
     if (nrow(data) < 50) {
       return(list(mu = mean(data$yards_gained), sigma = sd(data$yards_gained), lambda = 1))
     }
+    
     mix <- normalmixEM(data$yards_gained, k = 2, maxit = 100, epsilon = 1e-4)
     list(mu = mix$mu, sigma = mix$sigma, lambda = mix$lambda)
   }
   
   distributions <- list()
+  
   for (i in 1:nrow(categories)) {
     cat <- categories[i, ]
     key <- with(cat, paste(play_call, player_position, pass_length, red_zone, unexpected, sep = "_"))
+    
     subset <- play_data %>%
       filter(
         play_call == cat$play_call,
@@ -50,6 +50,7 @@ precompute_yards_distributions <- function(raw_data) {
         if (cat$play_call == "pass") pass_length == cat$pass_length else TRUE,
         red_zone == cat$red_zone
       )
+    
     if (nrow(subset) > 0) {
       distributions[[key]] <- fit_mixture(subset)
     }
