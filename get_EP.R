@@ -1,5 +1,7 @@
 source("run_epoch.R")
 
+library(ggplot2)
+
 get_EP <- function(down, ytg, fp, max_drives, n) {
   total_points <- 0
   
@@ -39,10 +41,10 @@ compare_ep_across_states <- function(game_states, max_drives, n, rates = seq(0, 
   return(results)
 }
 
-project_results <- function(max_drives = 10, n = 100, rates = seq(0, 0.3, by = 0.1)) {
+project_results <- function(max_drives = 10, n = 10, rates = seq(0, 0.25, by = 0.125)) {
   downs <- c(1, 2, 3)
-  ytgs <- c(3, 6, 10)
-  fps <- seq(10, 90, by = 20)
+  ytgs <- c(5, 10)
+  fps <- seq(15, 75, by = 20)
   
   game_states_df <- expand.grid(down = downs, ytg = ytgs, fp = fps)
   game_states <- split(game_states_df, 1:nrow(game_states_df))
@@ -50,7 +52,6 @@ project_results <- function(max_drives = 10, n = 100, rates = seq(0, 0.3, by = 0
   
   results <- compare_ep_across_states(game_states, max_drives, n, rates)
   
-  library(ggplot2)
   p <- ggplot(results, aes(x = Rate, y = EP)) +
     geom_line() +
     geom_point() +
@@ -61,7 +62,7 @@ project_results <- function(max_drives = 10, n = 100, rates = seq(0, 0.3, by = 0
   return(results)
 }
 
-results <- project_results(max_drives = 10, n = 100)
+results <- project_results(max_drives = 10, n = 10)
 
 print(results)
 
