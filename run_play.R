@@ -34,18 +34,33 @@ classify_drive_tendency <- function(play_history) {
 }
 
 get_unexpected_trigger <- function(play_history) {
-  n_plays <- length(play_history)
+  if (length(play_history) == 0) {
+    n_since_last <- 0
+  }
   
-  if (n_plays == 0) return(FALSE)
+  else {
+    unexpected_indices <- which(sapply(play_history, function(x) x$unexpected))
+    
+    if (length(unexpected_indices) == 0) {
+      n_since_last <- length(play_history)
+    }
+    
+    else {
+      last_unexpected_index <- max(unexpected_indices)
+      n_since_last <- length(play_history) - last_unexpected_index
+    }
+  }
+
+  n_plays <- n_since_last + 1
   
   if (exists("UNEXPECTED_RATE", envir = .GlobalEnv)) {
     lambda <- get("UNEXPECTED_RATE", envir = .GlobalEnv)
   }
   
   else {
-    lambda <- 0.1
+    lambda <- 0
   }
-
+  
   p_trigger <- 1 - exp(-lambda * n_plays)
   return(runif(1) < p_trigger)
 }
@@ -129,11 +144,11 @@ simulate_fourth_down <- function(fp, ytg) {
     made <- runif(1) < prob_fg
     
     if (made) {
-      return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "fg", yards = 0, play_type = "field_goal"))
+      return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "fg", yards = 0, play_type = "field_goal", unexpected = FALSE))
     }
     
     else {
-      return(list(down = 5, ytg = ytg, fp = fp, exit_drive = 1, event = "missed_fg", yards = 0, play_type = "field_goal"))
+      return(list(down = 5, ytg = ytg, fp = fp, exit_drive = 1, event = "missed_fg", yards = 0, play_type = "field_goal", unexpected = FALSE))
     }
   }
   
@@ -143,7 +158,7 @@ simulate_fourth_down <- function(fp, ytg) {
     new_fp <- 100 - (fp + punt_yards)
     new_fp <- max(1, min(new_fp, 99))
     
-    return(list(down = 5, ytg = ytg, fp = new_fp, exit_drive = 1, event = "punt", yards = punt_yards, play_type = "punt"))
+    return(list(down = 5, ytg = ytg, fp = new_fp, exit_drive = 1, event = "punt", yards = punt_yards, play_type = "punt", unexpected = FALSE))
   }
   
   else if (option == "GFI") {
@@ -210,13 +225,13 @@ simulate_play_internal <- function(down, ytg, fp, red_zone, play_history = list(
   
   if (play_call == "run") {
     if (simulate_fumble(play_call, player_position, play_data)) {
-      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1, event = "fumble", yards = 0, play_type = play_call))
+      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1, event = "fumble", yards = 0, play_type = play_call, unexpected = unexpected_flag))
     }
   }
   
   else if (play_call == "pass") {
     if (simulate_interception(play_call, pass_length, play_data)) {
-      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1, event = "interception", yards = 0, play_type = play_call))
+      return(list(down = down, ytg = ytg, fp = fp, exit_drive = 1, event = "interception", yards = 0, play_type = play_call, unexpected = unexpected_flag))
     }
     
     if (simulate_incompletion(play_call, pass_length, play_data)) {
@@ -224,7 +239,7 @@ simulate_play_internal <- function(down, ytg, fp, red_zone, play_history = list(
       exit_drive <- if (new_down > 4) 1 else 0
       event <- if (new_down > 4) "turnover_on_downs" else "incompletion"
       
-      return(list(down = new_down, ytg = ytg, fp = fp, exit_drive = exit_drive, event = event, yards = 0, play_type = play_call))
+      return(list(down = new_down, ytg = ytg, fp = fp, exit_drive = exit_drive, event = event, yards = 0, play_type = play_call, unexpected = unexpected_flag))
     }
   }
   
@@ -248,7 +263,7 @@ simulate_play_internal <- function(down, ytg, fp, red_zone, play_history = list(
   event <- "play_complete"
   
   if (new_fp >= 100) {
-    return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "td", yards = yards, play_type = play_call))
+    return(list(down = NA, ytg = NA, fp = 105, exit_drive = 1, event = "td", yards = yards, play_type = play_call, unexpected = unexpected_flag))
   }
   
   if (new_down > 4) {

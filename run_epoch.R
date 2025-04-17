@@ -1,6 +1,6 @@
+source("assign_player_position.R")
 source("run_drive.R")
 source("utils.R")
-source("assign_player_position.R")
 
 run_epoch <- function(down, ytg, fp, max_drives = 10) {
   team_status <- -1

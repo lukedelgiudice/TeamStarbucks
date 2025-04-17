@@ -11,7 +11,8 @@ run_drive <- function(D, YTG, FP, play_history = list()) {
       ytg = new_state$ytg,
       fp = new_state$fp,
       play_type = new_state$play_type,
-      event = new_state$event
+      event = new_state$event,
+      unexpected = new_state$unexpected
     )
   ))
   

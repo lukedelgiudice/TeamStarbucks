@@ -1,3 +1,6 @@
+source("unexpected_plays.R")
+source("precompute_yards_distributions.R")
+source("precompute_yards_distributions_unexpected.R")
 source("run_epoch.R")
 
 library(ggplot2)
@@ -40,32 +43,6 @@ compare_ep_across_states <- function(game_states, max_drives, n, rates = seq(0, 
   
   return(results)
 }
-
-project_results <- function(max_drives = 10, n = 10, rates = seq(0, 0.25, by = 0.125)) {
-  downs <- c(1, 2, 3)
-  ytgs <- c(5, 10)
-  fps <- seq(15, 75, by = 20)
-  
-  game_states_df <- expand.grid(down = downs, ytg = ytgs, fp = fps)
-  game_states <- split(game_states_df, 1:nrow(game_states_df))
-  game_states <- lapply(game_states, as.list)
-  
-  results <- compare_ep_across_states(game_states, max_drives, n, rates)
-  
-  p <- ggplot(results, aes(x = Rate, y = EP)) +
-    geom_line() +
-    geom_point() +
-    labs(title = "Average Expected Points vs UNEXPECTED_RATE", x = "UNEXPECTED_RATE", y = "Average EP") +
-    theme_minimal()
-  print(p)
-  
-  return(results)
-}
-
-results <- project_results(max_drives = 10, n = 10)
-
-print(results)
-
 
 # game_states <- list(
 #   list(down = 1, ytg = 10, fp = 63),
