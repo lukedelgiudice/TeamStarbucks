@@ -19,7 +19,7 @@ project_results <- function(max_drives = 10, n = 100, rates = seq(0, 0.2, by = 0
     source("get_EP.R")
   })
   
-  clusterExport(cl, varlist = c("game_states", "max_drives", "n", "rates"), envir    = environment())
+  clusterExport(cl, varlist = c("game_states", "max_drives", "n", "rates"), envir = environment())
   
   tasks <- expand.grid(idx  = seq_along(game_states), rate = rates, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
   
@@ -40,9 +40,7 @@ project_results <- function(max_drives = 10, n = 100, rates = seq(0, 0.2, by = 0
   p <- ggplot(results, aes(x = Rate, y = EP)) +
     geom_line() +
     geom_point() +
-    labs(title = "Average Expected Points vs UNEXPECTED_RATE",
-         x     = "UNEXPECTED_RATE",
-         y     = "Average EP") +
+    labs(title = "Average Expected Points vs UNEXPECTED_RATE", x = "UNEXPECTED_RATE", y = "Average EP") +
     theme_minimal()
   print(p)
   
