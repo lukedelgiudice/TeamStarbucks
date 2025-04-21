@@ -3,8 +3,8 @@ library(ggplot2)
 
 project_results <- function(max_drives = 10, n = 100, rates = seq(0, 0.2, by = 0.05)) {
   downs <- c(1, 2, 3)
-  ytgs  <- c(5, 10)
-  fps   <- seq(10, 90, by = 10)
+  ytgs <- c(5, 10)
+  fps <- seq(10, 90, by = 10)
   game_states_df <- expand.grid(down = downs, ytg  = ytgs, fp   = fps, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
   game_states <- split(game_states_df, seq_len(nrow(game_states_df)))
   
